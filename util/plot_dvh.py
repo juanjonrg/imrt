@@ -132,7 +132,7 @@ def plot(filename=None, rids=None):
         rids = list(range(len(plan.regions)))
     for r, color in rids.items():
         region = plan.regions[r]
-        hist = np.histogram(region['doses'], bins=bins, range=(0, max_gy))
+        hist = np.histogram(region['doses'], bins=bins, range=(0, np.max(region['doses'])))
         cumsum = (len(region['doses']) - np.insert(np.cumsum(hist[0]), 0, 0))
         cumsum = cumsum*100/len(region['doses'])
         plt.plot(hist[1], cumsum, linewidth=3, label=region['name'], color=color)
@@ -144,6 +144,7 @@ def plot(filename=None, rids=None):
     plt.xlabel("Dose (Grays)")
     plt.xticks(np.arange(0,105,5))
     plt.yticks(np.arange(0,105,10))
+    plt.xlim((-5, 105))
     plt.tight_layout()
     if filename is not None:
         plt.savefig(filename)
@@ -280,17 +281,18 @@ def regions_to_plot(plan):
 
 if __name__ == '__main__':
 
-    plan = load_plan('/home/juanjo/repos/Radiotherapy/plans/5') # Folder with all the plan files
+    plan = load_plan('/home/juanjo/repos/Radiotherapy/plans/3') # Folder with all the plan files
 
     # Folder with the plan results you want to plot. 
     # It looks for a pickle file with the fluence, like the ones I uploaded to the _extra zips in RaaS.
-    result_folder = '/home/juanjo/repos/Radiotherapy/results/gurobi/x_5_LPS122_20200928'
+    result_folder = '/home/juanjo/repos/Radiotherapy/results/gurobi/x_3_LP122_20200929'
     files = os.listdir(result_folder)
-    matching = fnmatch.filter(files, '*.pkl')
-    with open(os.path.join(result_folder, matching[0]), 'rb') as f:
-        fluence = pickle.load(f)
 
-    plan.compute_dose(fluence)
+    # matching = fnmatch.filter(files, '*.pkl')
+    # with open(os.path.join(result_folder, matching[0]), 'rb') as f:
+    #     fluence = pickle.load(f)
+
+    plan.compute_dose()
     translate_names(plan)
     #plot(filename=os.path.join(result_folder, 'DVH.pdf'), rids=regions_to_plot(plan))
     plot(filename=os.path.join(result_folder, 'DVH.png'), rids=regions_to_plot(plan))
@@ -300,4 +302,4 @@ if __name__ == '__main__':
             f.write(line + '\n')
 
     for index in range(plan.n_beams):
-        plot_beam(index, fluence, 'Beam {}'.format(index + 1), '{}/Beam_{}.png'.format(result_folder, index + 1))
+        plot_beam(index, plan.fluence_vector, 'Beam {}'.format(index + 1), '{}/Beam_{}.png'.format(result_folder, index + 1))
